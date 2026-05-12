@@ -339,6 +339,41 @@
       backdrop-filter: blur(6px);
     }
     .toast.show{opacity:1}
+  /* NUEVO: modal simple para elegir orden */
+.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 999;
+}
+.modal-card{
+  width: min(420px, 100%);
+  background: rgba(17,26,46,.95);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius2);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+.modal-title{
+  font-weight: 950;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.modal-sub{
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.modal-actions{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+}
   </style>
 </head>
 
@@ -441,6 +476,18 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- NUEVO: Modal para elegir orden de copiado -->
+<div class="modal-backdrop" id="orderModal" style="display:none;">
+  <div class="modal-card">
+    <div class="modal-title">Copiar faltantes</div>
+    <div class="modal-sub">Elegí el orden:</div>
+    <div class="modal-actions">
+      <button class="small primary" id="btnOrderAZ">Orden A‑Z</button>
+      <button class="small" id="btnOrderGroups">Orden Grupos</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /**
@@ -606,6 +653,27 @@ dupMinus.addEventListener("click", () => changeDup(-1));
 dupPlus.addEventListener("click", () => changeDup(+1));
 
 // NUEVO: botón copiar faltantes
+function chooseCopyOrder(){
+  return new Promise((resolve) => {
+    const modal = document.getElementById("orderModal");
+    const btnAZ = document.getElementById("btnOrderAZ");
+    const btnGroups = document.getElementById("btnOrderGroups");
+
+    const cleanup = () => {
+      btnAZ.removeEventListener("click", onAZ);
+      btnGroups.removeEventListener("click", onGroups);
+      modal.style.display = "none";
+    };
+
+    const onAZ = () => { cleanup(); resolve("alpha"); };
+    const onGroups = () => { cleanup(); resolve("groups"); };
+
+    btnAZ.addEventListener("click", onAZ);
+    btnGroups.addEventListener("click", onGroups);
+
+    modal.style.display = "flex";
+  });
+}
 document.getElementById("btnCopyMissing").addEventListener("click", copyMissingListToClipboard);
 
 /**
@@ -1075,17 +1143,14 @@ function buildMissingListText(orderMode = "groups"){
   }
   teamToGroup["FWC"] = "Grupo FWC";
 
-  // Orden base de equipos según modo
+  // Orden según modo
   let orderedTeams = [];
-
   if(orderMode === "alpha"){
-    // Alfabético por código de 3 letras (incluye FWC)
     const all = [];
     for(const g of GROUPS) all.push(...g.teams);
     all.push("FWC");
     orderedTeams = all.sort((a,b) => a.localeCompare(b));
-  }else{
-    // Orden por grupos (A→L) y luego FWC
+  } else {
     for(const g of GROUPS) orderedTeams.push(...g.teams);
     orderedTeams.push("FWC");
   }
@@ -1094,7 +1159,6 @@ function buildMissingListText(orderMode = "groups"){
     ensureTeam(teamId);
     const t = state.teams[teamId];
 
-    // faltantes = índices con have=false
     const missing = [];
     for(let i=0;i<TEAM_SIZE;i++){
       if(!t.have[i]){
@@ -1102,7 +1166,6 @@ function buildMissingListText(orderMode = "groups"){
       }
     }
 
-    // si no faltan, no se imprime
     if(missing.length === 0) continue;
 
     const groupName = teamToGroup[teamId] || "Grupo ?";
@@ -1116,24 +1179,22 @@ function buildMissingListText(orderMode = "groups"){
 }
 
 async function copyMissingListToClipboard(){
-  // Pregunta de orden (OK = alfabético / Cancel = por grupos)
-  const alpha = confirm(
-    "¿Cómo querés copiar la lista?\n\nOK = Orden alfabético (por código)\nCancelar = Orden por grupos"
-  );
-
-  const text = buildMissingListText(alpha ? "alpha" : "groups");
+  const mode = await chooseCopyOrder(); // "alpha" o "groups"
+  const text = buildMissingListText(mode);
 
   if(!text){
     toastMsg("No te falta ninguna 😄");
     return;
   }
 
+  const okMsg = (mode === "alpha")
+    ? "Faltantes copiados (A‑Z) ✅"
+    : "Faltantes copiados (por grupos) ✅";
+
   try{
-    // Clipboard API (funciona en https como GitHub Pages)
     await navigator.clipboard.writeText(text);
-    toastMsg(alpha ? "Faltantes copiados (A-Z) ✅" : "Faltantes copiados (por grupos) ✅");
+    toastMsg(okMsg);
   }catch(e){
-    // fallback
     try{
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -1144,12 +1205,13 @@ async function copyMissingListToClipboard(){
       ta.select();
       document.execCommand("copy");
       ta.remove();
-      toastMsg(alpha ? "Faltantes copiados (A-Z) ✅" : "Faltantes copiados (por grupos) ✅");
+      toastMsg(okMsg);
     }catch(err){
       alert("No pude copiar al portapapeles. Probá desde HTTPS (GitHub Pages) o copiá manualmente.");
     }
   }
 }
+
 </script>
 </body>
 </html>
