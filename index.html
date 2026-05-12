@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Figuritas Mundial — Tracker</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --text:#e8eefc;
+      --muted:#9fb0d0;
+      --green:#2ecc71;
+      --red:#e74c3c;
+      --yellow:#f1c40f;
+      --stroke:rgba(255,255,255,.12);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:14px;
+      --radius2:18px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(46,204,113,.18), transparent 60%),
+                  radial-gradient(900px 600px at 110% 10%, rgba(52,152,219,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      height: 100dvh;
+      overflow:hidden;
+    }
+
+    .app{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding:12px;
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--stroke);
+      border-radius:var(--radius2);
+      box-shadow:var(--shadow);
+    }
+    .title{display:flex; flex-direction:column; gap:2px;}
+    .title h1{margin:0; font-size:16px; letter-spacing:.2px}
+    .title small{color:var(--muted); font-size:12px}
+
+    .stats{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+    .chip{
+      padding:8px 10px;
+      background: rgba(0,0,0,.18);
+      border:1px solid var(--stroke);
+      border-radius:999px;
+      font-size:12px;
+      color:var(--text);
+      display:flex;
+      gap:8px;
+      align-items:center;
+      white-space:nowrap;
+    }
+    .dot{width:8px;height:8px;border-radius:50%}
+    .dot.green{background:var(--green)}
+    .dot.red{background:var(--red)}
+    .dot.yellow{background:var(--yellow)}
+
+    .actions{display:flex; gap:8px; flex-wrap:wrap;}
+    button{
+      font:inherit;
+      color:var(--text);
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--stroke);
+      border-radius:12px;
+      padding:9px 10px;
+      cursor:pointer;
+      transition: transform .05s ease, background .15s ease;
+    }
+    button:hover{background: rgba(255,255,255,.10)}
+    button:active{transform: translateY(1px)}
+    button.danger{background: rgba(231,76,60,.12); border-color: rgba(231,76,60,.35)}
+    button.danger:hover{background: rgba(231,76,60,.18)}
+    button.primary{background: rgba(46,204,113,.12); border-color: rgba(46,204,113,.35)}
+    button.primary:hover{background: rgba(46,204,113,.18)}
+    button.small{padding:7px 9px; border-radius:10px; font-size:12px}
+
+    .main{
+      flex:1;
+      min-height:0;
+      display:flex;
+    }
+    .panel{
+      flex:1;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid var(--stroke);
+      border-radius:var(--radius2);
+      box-shadow:var(--shadow);
+      min-height:0;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .panel .panel-head{
+      padding:12px 14px;
+      border-bottom:1px solid var(--stroke);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .panel .panel-head h2{margin:0; font-size:14px;}
+    .panel .panel-body{
+      padding:12px;
+      overflow:auto;
+      min-height:0;
+    }
+
+    details.group{
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      overflow:hidden;
+      background: rgba(0,0,0,.12);
+      margin-bottom:10px;
+    }
+    details.group > summary{
+      cursor:pointer;
+      list-style:none;
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      user-select:none;
+      background: rgba(255,255,255,.03);
+    }
+    details.group > summary::-webkit-details-marker{display:none}
+    .group-title{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      font-weight:800;
+      font-size:13px;
+    }
+    .pill{
+      font-size:11px;
+      color:var(--muted);
+      border:1px solid var(--stroke);
+      padding:3px 8px;
+      border-radius:999px;
+      background: rgba(255,255,255,.03);
+    }
+
+    .teams{
+      padding:10px;
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (min-width: 860px){
+      .teams{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    .team-card{
+      position:relative;
+      padding:10px 10px 9px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: rgba(17,26,46,.55);
+      overflow:hidden;
+      cursor:pointer;
+      transition: transform .06s ease, border-color .15s ease;
+      min-height:74px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .team-card:hover{border-color: rgba(46,204,113,.35)}
+    .team-card:active{transform: translateY(1px)}
+    .team-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .team-name{font-weight:900; font-size:13px; line-height:1.15;}
+    .team-sub{font-size:11px; color:var(--muted);}
+    .mini{
+      font-size:11px;
+      color:var(--text);
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.15);
+      padding:4px 8px;
+      border-radius:999px;
+      white-space:nowrap;
+      height: fit-content;
+    }
+    .bar{
+      height:8px;
+      border-radius:999px;
+      background: rgba(231,76,60,.25);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .bar > i{
+      display:block;
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(46,204,113,.95), rgba(46,204,113,.65));
+    }
+
+    .team-view{
+      display:none;
+      flex-direction:column;
+      gap:12px;
+      min-height:0;
+    }
+    .team-meta{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .tag{
+      font-size:12px;
+      color:var(--muted);
+      border:1px solid var(--stroke);
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(0,0,0,.12);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (min-width: 560px){
+      .grid{grid-template-columns: repeat(10, minmax(0, 1fr));}
+    }
+    .sticker{
+      border-radius:14px;
+      padding:10px 6px;
+      border:1px solid var(--stroke);
+      background: rgba(231,76,60,.14);
+      text-align:center;
+      cursor:pointer;
+      user-select:none;
+      font-weight:900;
+      letter-spacing:.3px;
+      position:relative;
+      min-height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+    }
+    .sticker.have{
+      background: rgba(46,204,113,.16);
+      border-color: rgba(46,204,113,.28);
+    }
+    .sticker.selected{
+      outline:2px solid rgba(241,196,15,.65);
+      outline-offset:0;
+    }
+    .sticker:active{transform: translateY(1px)}
+    .badge{
+      position:absolute;
+      top:6px;
+      right:6px;
+      font-size:10px;
+      padding:2px 6px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+    }
+    .badge.hide{display:none}
+
+    .bottom{
+      display:flex;
+      gap:10px;
+      align-items:stretch;
+      flex-wrap:wrap;
+    }
+    .bottom .box{
+      flex:1;
+      min-width:260px;
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      background: rgba(0,0,0,.14);
+      padding:10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .sel{display:flex; flex-direction:column; gap:2px;}
+    .sel .big{font-size:14px; font-weight:950}
+    .sel .small{font-size:12px; color:var(--muted)}
+    .stepper{display:flex; align-items:center; gap:8px;}
+    .stepper .val{
+      min-width:42px;
+      text-align:center;
+      font-weight:950;
+      font-size:14px;
+      padding:6px 8px;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+    }
+    .hint{font-size:12px; color:var(--muted); line-height:1.35;}
+
+    .toast{
+      position:fixed;
+      bottom:14px;
+      left:50%;
+      transform:translateX(-50%);
+      background: rgba(0,0,0,.55);
+      border:1px solid var(--stroke);
+      padding:10px 12px;
+      border-radius:999px;
+      color:var(--text);
+      font-size:12px;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease;
+      backdrop-filter: blur(6px);
+    }
+    .toast.show{opacity:1}
+  </style>
+</head>
+
+<body>
+<div class="app">
+  <header>
+    <div class="title">
+      <h1>Figuritas — Tracker</h1>
+      <small>980 en total (48×20 + FWC×20) · Guardado automático (localStorage)</small>
+    </div>
+
+    <div class="stats">
+      <div class="chip" title="Te faltan (sin contar repetidas)">
+        <span class="dot red"></span>
+        <span><b id="missing">—</b> faltan</span>
+      </div>
+      <div class="chip" title="Tenés marcadas como 'tengo'">
+        <span class="dot green"></span>
+        <span><b id="owned">—</b> tengo</span>
+      </div>
+      <div class="chip" title="Total de repetidas (extras)">
+        <span class="dot yellow"></span>
+        <span><b id="dupsTotal">—</b> repetidas</span>
+      </div>
+
+      <div class="actions">
+        <!-- NUEVO: copiar faltantes para WhatsApp -->
+        <button class="small primary" id="btnCopyMissing">Copiar faltantes</button>
+
+        <button class="small" id="btnExport">Exportar</button>
+        <button class="small" id="btnImport">Importar</button>
+        <button class="small danger" id="btnResetAll">Reset todo</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- HOME -->
+    <section class="panel" id="homePanel">
+      <div class="panel-head">
+        <h2>Equipos por grupo</h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <span class="pill">Tip: tocá un equipo para editar sus figuritas</span>
+          <button class="small" id="btnOpenAll">Abrir grupos</button>
+          <button class="small" id="btnCloseAll">Cerrar grupos</button>
+        </div>
+      </div>
+      <div class="panel-body" id="groupsContainer"></div>
+    </section>
+
+    <!-- TEAM VIEW -->
+    <section class="panel" id="teamPanel" style="display:none;">
+      <div class="panel-head" style="justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="small" id="btnBack">← Volver</button>
+          <h2 id="teamTitle">Equipo</h2>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="small danger" id="btnResetTeam">Reset equipo</button>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <div class="team-view" id="teamView">
+          <div class="team-meta">
+            <span class="tag" id="teamProgress">0/20</span>
+            <span class="tag" id="teamPercent">0%</span>
+            <span class="tag" id="teamMissing">Faltan 20</span>
+          </div>
+
+          <div class="grid" id="stickerGrid"></div>
+
+          <div class="bottom">
+            <div class="box">
+              <div class="sel">
+                <div class="big" id="selTitle">Seleccioná una figurita</div>
+                <div class="small" id="selState">—</div>
+              </div>
+
+              <div class="stepper">
+                <button id="dupMinus" class="small">−</button>
+                <div class="val" id="dupVal">0</div>
+                <button id="dupPlus" class="small">+</button>
+              </div>
+            </div>
+
+            <div class="box" style="justify-content:flex-start;">
+              <div class="hint">
+                • Click en un número = <b>tengo / no tengo</b> (verde/rojo).<br>
+                • El contador es de <b>repetidas (extras)</b>. Si ponés “no tengo”, se resetea a 0.<br>
+                • En FWC se muestran <b>00–19</b>.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/**
+ * =========================
+ * 1) CONFIGURACIÓN (A–L + FWC)
+ * =========================
+ */
+const GROUPS = [
+  { name: "Grupo A", teams: ["MEX","RSA","KOR","CZE"] },
+  { name: "Grupo B", teams: ["CAN","BIH","QAT","SUI"] },
+  { name: "Grupo C", teams: ["BRA","MAR","HAI","SCO"] },
+  { name: "Grupo D", teams: ["USA","PAR","AUS","TUR"] },
+  { name: "Grupo E", teams: ["GER","CUW","CIV","ECU"] },
+  { name: "Grupo F", teams: ["NED","JPN","SWE","TUN"] },
+  { name: "Grupo G", teams: ["BEL","EGY","IRN","NZL"] },
+  { name: "Grupo H", teams: ["ESP","CPV","KSA","URU"] },
+  { name: "Grupo I", teams: ["FRA","SEN","IRQ","NOR"] },
+  { name: "Grupo J", teams: ["ARG","ALG","AUT","JOR"] },
+  { name: "Grupo K", teams: ["POR","COD","UZB","COL"] },
+  { name: "Grupo L", teams: ["ENG","CRO","GHA","PAN"] },
+];
+
+const EXTRA_CATEGORY = { name: "FWC", teams: ["FWC"] };
+
+const TEAM_META = {
+  // A
+  MEX:{name:"México", flag:"🇲🇽"},
+  RSA:{name:"Sudáfrica", flag:"🇿🇦"},
+  KOR:{name:"Corea del Sur", flag:"🇰🇷"},
+  CZE:{name:"Rep. Checa", flag:"🇨🇿"},
+
+  // B
+  CAN:{name:"Canadá", flag:"🇨🇦"},
+  BIH:{name:"Bosnia y Herzegovina", flag:"🇧🇦"},
+  QAT:{name:"Qatar", flag:"🇶🇦"},
+  SUI:{name:"Suiza", flag:"🇨🇭"},
+
+  // C
+  BRA:{name:"Brasil", flag:"🇧🇷"},
+  MAR:{name:"Marruecos", flag:"🇲🇦"},
+  HAI:{name:"Haití", flag:"🇭🇹"},
+  // Escocia (emoji especial)
+  SCO:{name:"Escocia", flag:"🏴\uDB40\uDC67\uDB40\uDC62\uDB40\uDC73\uDB40\uDC63\uDB40\uDC74\uDB40\uDC7F"},
+
+  // D
+  USA:{name:"USA", flag:"🇺🇸"},
+  PAR:{name:"Paraguay", flag:"🇵🇾"},
+  AUS:{name:"Australia", flag:"🇦🇺"},
+  TUR:{name:"Turquía", flag:"🇹🇷"},
+
+  // E
+  GER:{name:"Alemania", flag:"🇩🇪"},
+  CUW:{name:"Curazao", flag:"🇨🇼"},
+  CIV:{name:"Costa de Marfil", flag:"🇨🇮"},
+  ECU:{name:"Ecuador", flag:"🇪🇨"},
+
+  // F
+  NED:{name:"Países Bajos", flag:"🇳🇱"},
+  JPN:{name:"Japón", flag:"🇯🇵"},
+  SWE:{name:"Suecia", flag:"🇸🇪"},
+  TUN:{name:"Túnez", flag:"🇹🇳"},
+
+  // G
+  BEL:{name:"Bélgica", flag:"🇧🇪"},
+  EGY:{name:"Egipto", flag:"🇪🇬"},
+  IRN:{name:"Irán", flag:"🇮🇷"},
+  NZL:{name:"Nueva Zelanda", flag:"🇳🇿"},
+
+  // H
+  ESP:{name:"España", flag:"🇪🇸"},
+  CPV:{name:"Cabo Verde", flag:"🇨🇻"},
+  KSA:{name:"Arabia Saudita", flag:"🇸🇦"},
+  URU:{name:"Uruguay", flag:"🇺🇾"},
+
+  // I
+  FRA:{name:"Francia", flag:"🇫🇷"},
+  SEN:{name:"Senegal", flag:"🇸🇳"},
+  IRQ:{name:"Iraq", flag:"🇮🇶"},
+  NOR:{name:"Noruega", flag:"🇳🇴"},
+
+  // J
+  ARG:{name:"Argentina", flag:"🇦🇷"},
+  ALG:{name:"Argelia", flag:"🇩🇿"},
+  AUT:{name:"Austria", flag:"🇦🇹"},
+  JOR:{name:"Jordania", flag:"🇯🇴"},
+
+  // K
+  POR:{name:"Portugal", flag:"🇵🇹"},
+  COD:{name:"R.D. Congo", flag:"🇨🇩"},
+  UZB:{name:"Uzbekistán", flag:"🇺🇿"},
+  COL:{name:"Colombia", flag:"🇨🇴"},
+
+  // L
+  // Inglaterra (emoji especial)
+  ENG:{name:"Inglaterra", flag:"🏴\uDB40\uDC67\uDB40\uDC62\uDB40\uDC65\uDB40\uDC6E\uDB40\uDC67\uDB40\uDC7F"},
+  CRO:{name:"Croacia", flag:"🇭🇷"},
+  GHA:{name:"Ghana", flag:"🇬🇭"},
+  PAN:{name:"Panamá", flag:"🇵🇦"},
+
+  // Extra
+  FWC:{name:"FWC", flag:"🏆"},
+};
+
+function teamLabel(id){
+  const m = TEAM_META[id] || {name:id, flag:"🏳️"};
+  return `${m.flag} ${m.name}`;
+}
+
+// Cada equipo tiene 20 (1..20). FWC tiene 20 (00..19).
+const TEAM_SIZE = 20;
+const TOTAL_STICKERS = 980;
+
+// LocalStorage key
+const STORAGE_KEY = "stickers_tracker_v4";
+
+/**
+ * =========================
+ * 2) ESTADO (persistente)
+ * =========================
+ * state = { teams: { "ARG":{have:[boolx20], dup:[intx20]} ... } }
+ */
+let state = loadState();
+
+// UI state
+let currentTeam = null;     // string
+let currentIsFWC = false;   // bool
+let selectedIdx = null;     // 0..19
+
+// DOM
+const groupsContainer = document.getElementById("groupsContainer");
+const homePanel = document.getElementById("homePanel");
+const teamPanel = document.getElementById("teamPanel");
+const teamView = document.getElementById("teamView");
+const teamTitle = document.getElementById("teamTitle");
+const stickerGrid = document.getElementById("stickerGrid");
+
+const missingEl = document.getElementById("missing");
+const ownedEl = document.getElementById("owned");
+const dupsTotalEl = document.getElementById("dupsTotal");
+
+const teamProgressEl = document.getElementById("teamProgress");
+const teamPercentEl = document.getElementById("teamPercent");
+const teamMissingEl = document.getElementById("teamMissing");
+
+const selTitle = document.getElementById("selTitle");
+const selState = document.getElementById("selState");
+const dupVal = document.getElementById("dupVal");
+const dupMinus = document.getElementById("dupMinus");
+const dupPlus = document.getElementById("dupPlus");
+
+const toast = document.getElementById("toast");
+
+// Buttons (existentes)
+document.getElementById("btnBack").addEventListener("click", () => showHome());
+document.getElementById("btnResetAll").addEventListener("click", resetAll);
+document.getElementById("btnResetTeam").addEventListener("click", resetTeam);
+document.getElementById("btnOpenAll").addEventListener("click", () => setAllDetails(true));
+document.getElementById("btnCloseAll").addEventListener("click", () => setAllDetails(false));
+document.getElementById("btnExport").addEventListener("click", exportData);
+document.getElementById("btnImport").addEventListener("click", importData);
+
+dupMinus.addEventListener("click", () => changeDup(-1));
+dupPlus.addEventListener("click", () => changeDup(+1));
+
+// NUEVO: botón copiar faltantes
+document.getElementById("btnCopyMissing").addEventListener("click", copyMissingListToClipboard);
+
+/**
+ * =========================
+ * 3) INIT
+ * =========================
+ */
+renderHome();
+showHome();
+updateGlobalStats();
+
+/**
+ * =========================
+ * 4) RENDER HOME
+ * =========================
+ */
+function renderHome(){
+  groupsContainer.innerHTML = "";
+  for(const grp of GROUPS){
+    groupsContainer.appendChild(renderGroup(grp.name, grp.teams, true));
+  }
+  groupsContainer.appendChild(renderGroup("FWC", ["FWC"], false));
+}
+
+function renderGroup(title, teams, openByDefault){
+  const details = document.createElement("details");
+  details.className = "group";
+  details.open = openByDefault;
+
+  const summary = document.createElement("summary");
+  const left = document.createElement("div");
+  left.className = "group-title";
+  left.innerHTML = `<span>${title}</span>`;
+
+  const right = document.createElement("div");
+  right.className = "pill";
+  const {haveCount, totalCount} = groupCounts(teams);
+  right.textContent = `${haveCount}/${totalCount}`;
+
+  summary.appendChild(left);
+  summary.appendChild(right);
+  details.appendChild(summary);
+
+  const wrap = document.createElement("div");
+  wrap.className = "teams";
+
+  for(const t of teams){
+    wrap.appendChild(renderTeamCard(t));
+  }
+
+  details.appendChild(wrap);
+  return details;
+}
+
+function renderTeamCard(teamId){
+  ensureTeam(teamId);
+
+  const card = document.createElement("div");
+  card.className = "team-card";
+  card.addEventListener("click", () => openTeam(teamId));
+
+  const top = document.createElement("div");
+  top.className = "team-top";
+
+  const meta = TEAM_META[teamId] || {name:teamId, flag:"🏳️"};
+
+  const name = document.createElement("div");
+  name.innerHTML = `
+    <div class="team-name">${meta.flag} ${meta.name}</div>
+    <div class="team-sub">${teamId} · ${teamId==="FWC" ? "00–19" : "1–20"}</div>
+  `;
+
+  const mini = document.createElement("div");
+  mini.className = "mini";
+  const {haveCount, total} = teamCounts(teamId);
+  mini.textContent = `${haveCount}/${total}`;
+
+  top.appendChild(name);
+  top.appendChild(mini);
+
+  const bar = document.createElement("div");
+  bar.className = "bar";
+  const fill = document.createElement("i");
+  const pct = total ? Math.round((haveCount/total)*100) : 0;
+  fill.style.width = `${pct}%`;
+  bar.appendChild(fill);
+
+  card.appendChild(top);
+  card.appendChild(bar);
+
+  return card;
+}
+
+function refreshHome(){
+  renderHome();
+}
+
+/**
+ * =========================
+ * 5) TEAM VIEW
+ * =========================
+ */
+function openTeam(teamId){
+  ensureTeam(teamId);
+
+  currentTeam = teamId;
+  currentIsFWC = (teamId === "FWC");
+  selectedIdx = null;
+
+  teamTitle.textContent = teamLabel(teamId);
+
+  renderTeamGrid();
+  updateTeamMeta();
+
+  homePanel.style.display = "none";
+  teamPanel.style.display = "flex";
+  teamView.style.display = "flex";
+}
+
+function showHome(){
+  currentTeam = null;
+  currentIsFWC = false;
+  selectedIdx = null;
+
+  homePanel.style.display = "flex";
+  teamPanel.style.display = "none";
+  teamView.style.display = "none";
+
+  refreshHome();
+  updateGlobalStats();
+}
+
+function renderTeamGrid(){
+  stickerGrid.innerHTML = "";
+  const team = state.teams[currentTeam];
+
+  for(let i=0;i<TEAM_SIZE;i++){
+    const btn = document.createElement("div");
+    btn.className = "sticker";
+
+    const have = !!team.have[i];
+    if(have) btn.classList.add("have");
+
+    btn.textContent = currentIsFWC ? String(i).padStart(2,"0") : String(i+1);
+
+    const b = document.createElement("span");
+    b.className = "badge";
+    const d = team.dup[i] || 0;
+    b.textContent = `+${d}`;
+    if(d<=0) b.classList.add("hide");
+    btn.appendChild(b);
+
+    btn.addEventListener("click", () => onStickerClick(i));
+    stickerGrid.appendChild(btn);
+  }
+
+  setSelectedUI(null);
+}
+
+function onStickerClick(i){
+  selectedIdx = i;
+
+  const team = state.teams[currentTeam];
+  team.have[i] = !team.have[i];
+
+  if(!team.have[i]){
+    team.dup[i] = 0;
+  }
+
+  saveState();
+  renderTeamGrid();
+  updateTeamMeta();
+  updateGlobalStats();
+  refreshHome();
+
+  setSelectedUI(i);
+  toastMsg(team.have[i] ? "Marcada como TENGO ✅" : "Marcada como NO TENGO ❌");
+}
+
+function setSelectedUI(i){
+  const team = currentTeam ? state.teams[currentTeam] : null;
+
+  [...stickerGrid.children].forEach((el, idx)=>{
+    el.classList.toggle("selected", idx===i);
+  });
+
+  if(i===null || team===null){
+    selTitle.textContent = "Seleccioná una figurita";
+    selState.textContent = "—";
+    dupVal.textContent = "0";
+    dupMinus.disabled = true;
+    dupPlus.disabled = true;
+    return;
+  }
+
+  const label = currentIsFWC ? String(i).padStart(2,"0") : String(i+1);
+  const have = !!team.have[i];
+  const dups = team.dup[i] || 0;
+
+  selTitle.textContent = `Seleccionada: ${label}`;
+  selState.textContent = have ? "Estado: TENGO (verde)" : "Estado: NO TENGO (rojo)";
+  dupVal.textContent = String(dups);
+
+  dupMinus.disabled = !have;
+  dupPlus.disabled = !have;
+}
+
+function changeDup(delta){
+  if(currentTeam===null || selectedIdx===null) return;
+
+  const team = state.teams[currentTeam];
+  if(!team.have[selectedIdx]) return;
+
+  const val = team.dup[selectedIdx] || 0;
+  const next = Math.max(0, val + delta);
+  team.dup[selectedIdx] = next;
+
+  saveState();
+  renderTeamGrid();
+  updateTeamMeta();
+  updateGlobalStats();
+  refreshHome();
+  setSelectedUI(selectedIdx);
+}
+
+/**
+ * =========================
+ * 6) STATS
+ * =========================
+ */
+function teamCounts(teamId){
+  const t = state.teams[teamId];
+  const total = TEAM_SIZE;
+  let haveCount = 0;
+  for(let i=0;i<TEAM_SIZE;i++){
+    if(t.have[i]) haveCount++;
+  }
+  return {haveCount, total};
+}
+
+function groupCounts(teamIds){
+  let haveCount = 0;
+  let totalCount = 0;
+  for(const id of teamIds){
+    ensureTeam(id);
+    const t = state.teams[id];
+    totalCount += TEAM_SIZE;
+    for(let i=0;i<TEAM_SIZE;i++){
+      if(t.have[i]) haveCount++;
+    }
+  }
+  return {haveCount, totalCount};
+}
+
+function updateTeamMeta(){
+  if(!currentTeam) return;
+  const t = state.teams[currentTeam];
+
+  let haveCount = 0;
+  for(let i=0;i<TEAM_SIZE;i++){
+    if(t.have[i]) haveCount++;
+  }
+
+  const total = TEAM_SIZE;
+  const pct = Math.round((haveCount/total)*100);
+  teamProgressEl.textContent = `${haveCount}/${total}`;
+  teamPercentEl.textContent = `${pct}% completo`;
+  teamMissingEl.textContent = `Faltan ${total - haveCount}`;
+
+  setSelectedUI(selectedIdx);
+}
+
+function updateGlobalStats(){
+  let owned = 0;
+  let dups = 0;
+
+  for(const id in state.teams){
+    const t = state.teams[id];
+    for(let i=0;i<TEAM_SIZE;i++){
+      if(t.have[i]) owned++;
+      dups += (t.dup[i] || 0);
+    }
+  }
+
+  const missing = Math.max(0, TOTAL_STICKERS - owned);
+
+  ownedEl.textContent = owned;
+  missingEl.textContent = missing;
+  dupsTotalEl.textContent = dups;
+}
+
+/**
+ * =========================
+ * 7) RESET / IMPORT / EXPORT
+ * =========================
+ */
+function resetAll(){
+  if(!confirm("¿Resetear TODO? Se borra el progreso del dispositivo.")) return;
+  state = makeEmptyState();
+  saveState();
+  showHome();
+  toastMsg("Progreso reseteado.");
+}
+
+function resetTeam(){
+  if(!currentTeam) return;
+  if(!confirm(`¿Resetear ${teamLabel(currentTeam)}?`)) return;
+
+  state.teams[currentTeam] = makeEmptyTeam();
+  saveState();
+
+  renderTeamGrid();
+  updateTeamMeta();
+  updateGlobalStats();
+  refreshHome();
+  toastMsg("Equipo reseteado.");
+}
+
+function exportData(){
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    state
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "figuritas-tracker-backup.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toastMsg("Backup exportado.");
+}
+
+function importData(){
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const parsed = JSON.parse(reader.result);
+        if(!parsed?.state?.teams) throw new Error("Formato inválido");
+        state = normalizeState(parsed.state);
+        saveState();
+        showHome();
+        toastMsg("Backup importado ✅");
+      }catch(e){
+        alert("No pude importar ese archivo. Asegurate de que sea un backup exportado desde esta app.");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+/**
+ * =========================
+ * 8) STORAGE HELPERS
+ * =========================
+ */
+function makeEmptyTeam(){
+  return {
+    have: Array(TEAM_SIZE).fill(false),
+    dup: Array(TEAM_SIZE).fill(0),
+  };
+}
+
+function makeEmptyState(){
+  const s = { teams: {} };
+
+  const allTeams = new Set();
+  for(const g of GROUPS) g.teams.forEach(t => allTeams.add(t));
+  EXTRA_CATEGORY.teams.forEach(t => allTeams.add(t));
+
+  for(const id of allTeams){
+    s.teams[id] = makeEmptyTeam();
+  }
+  return s;
+}
+
+function ensureTeam(teamId){
+  if(!state.teams[teamId]){
+    state.teams[teamId] = makeEmptyTeam();
+    saveState();
+  }
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return makeEmptyState();
+    const parsed = JSON.parse(raw);
+    return normalizeState(parsed);
+  }catch(e){
+    return makeEmptyState();
+  }
+}
+
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function normalizeState(s){
+  const out = { teams: {} };
+  const base = makeEmptyState();
+
+  if(s?.teams){
+    for(const id in s.teams){
+      const t = s.teams[id] || {};
+      const have = Array.isArray(t.have) ? t.have.slice(0,TEAM_SIZE) : [];
+      const dup  = Array.isArray(t.dup)  ? t.dup.slice(0,TEAM_SIZE)  : [];
+      while(have.length<TEAM_SIZE) have.push(false);
+      while(dup.length<TEAM_SIZE) dup.push(0);
+
+      for(let i=0;i<TEAM_SIZE;i++){
+        have[i] = !!have[i];
+        dup[i] = Math.max(0, parseInt(dup[i]||0,10) || 0);
+        if(!have[i]) dup[i] = 0;
+      }
+      out.teams[id] = { have, dup };
+    }
+  }
+
+  for(const id in base.teams){
+    if(!out.teams[id]) out.teams[id] = base.teams[id];
+  }
+  return out;
+}
+
+/**
+ * =========================
+ * 9) UX helpers
+ * =========================
+ */
+function toastMsg(msg){
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"), 1200);
+}
+function setAllDetails(open){
+  document.querySelectorAll("details.group").forEach(d => d.open = open);
+}
+
+/**
+ * =========================
+ * 10) NUEVO: LISTA DE FALTANTES + PORTAPAPELES (WhatsApp)
+ * =========================
+ * Formato: "Grupo X XXX [BANDERA]: 1 - 2 - 5"
+ * - Si un país no tiene faltantes => no aparece
+ * - FWC => "Grupo FWC FWC [🏆]: 00 - 01 - ..."
+ */
+function buildMissingListText(){
+  const lines = [];
+
+  // Mapa rápido: teamId -> nombre de grupo (ej "Grupo A")
+  const teamToGroup = {};
+  for(const g of GROUPS){
+    for(const t of g.teams){
+      teamToGroup[t] = g.name;
+    }
+  }
+  // FWC como grupo especial
+  teamToGroup["FWC"] = "Grupo FWC";
+
+  // Recorremos en orden de grupos (A->L) y luego FWC
+  const orderedTeams = [];
+  for(const g of GROUPS) orderedTeams.push(...g.teams);
+  orderedTeams.push("FWC");
+
+  for(const teamId of orderedTeams){
+    ensureTeam(teamId);
+    const t = state.teams[teamId];
+
+    // faltantes = indices con have=false
+    const missing = [];
+    for(let i=0;i<TEAM_SIZE;i++){
+      if(!t.have[i]){
+        missing.push(teamId === "FWC" ? String(i).padStart(2,"0") : String(i+1));
+      }
+    }
+
+    // si no faltan, no se imprime
+    if(missing.length === 0) continue;
+
+    const groupName = teamToGroup[teamId] || "Grupo ?";
+    const flag = (TEAM_META[teamId]?.flag) ? TEAM_META[teamId].flag : "🏳️";
+    const numbers = missing.join(" - ");
+
+    lines.push(`${groupName} ${teamId} [${flag}]: ${numbers}`);
+  }
+
+  return lines.join("\n");
+}
+
+async function copyMissingListToClipboard(){
+  const text = buildMissingListText();
+
+  if(!text){
+    toastMsg("No te falta ninguna 😄");
+    return;
+  }
+
+  try{
+    // clipboard API (funciona en https como GitHub Pages)
+    await navigator.clipboard.writeText(text);
+    toastMsg("Faltantes copiados ✅");
+  }catch(e){
+    // fallback
+    try{
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly","");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      toastMsg("Faltantes copiados ✅");
+    }catch(err){
+      alert("No pude copiar al portapapeles. Probá desde HTTPS (GitHub Pages) o copiá manualmente.");
+    }
+  }
+}
+</script>
+</body>
+</html>
+``
