@@ -1063,29 +1063,38 @@ function setAllDetails(open){
  * - Si un país no tiene faltantes => no aparece
  * - FWC => "Grupo FWC FWC [🏆]: 00 - 01 - ..."
  */
-function buildMissingListText(){
+function buildMissingListText(orderMode = "groups"){
   const lines = [];
 
-  // Mapa rápido: teamId -> nombre de grupo (ej "Grupo A")
+  // teamId -> nombre de grupo (ej "Grupo A")
   const teamToGroup = {};
   for(const g of GROUPS){
     for(const t of g.teams){
       teamToGroup[t] = g.name;
     }
   }
-  // FWC como grupo especial
   teamToGroup["FWC"] = "Grupo FWC";
 
-  // Recorremos en orden de grupos (A->L) y luego FWC
-  const orderedTeams = [];
-  for(const g of GROUPS) orderedTeams.push(...g.teams);
-  orderedTeams.push("FWC");
+  // Orden base de equipos según modo
+  let orderedTeams = [];
+
+  if(orderMode === "alpha"){
+    // Alfabético por código de 3 letras (incluye FWC)
+    const all = [];
+    for(const g of GROUPS) all.push(...g.teams);
+    all.push("FWC");
+    orderedTeams = all.sort((a,b) => a.localeCompare(b));
+  }else{
+    // Orden por grupos (A→L) y luego FWC
+    for(const g of GROUPS) orderedTeams.push(...g.teams);
+    orderedTeams.push("FWC");
+  }
 
   for(const teamId of orderedTeams){
     ensureTeam(teamId);
     const t = state.teams[teamId];
 
-    // faltantes = indices con have=false
+    // faltantes = índices con have=false
     const missing = [];
     for(let i=0;i<TEAM_SIZE;i++){
       if(!t.have[i]){
@@ -1107,7 +1116,12 @@ function buildMissingListText(){
 }
 
 async function copyMissingListToClipboard(){
-  const text = buildMissingListText();
+  // Pregunta de orden (OK = alfabético / Cancel = por grupos)
+  const alpha = confirm(
+    "¿Cómo querés copiar la lista?\n\nOK = Orden alfabético (por código)\nCancelar = Orden por grupos"
+  );
+
+  const text = buildMissingListText(alpha ? "alpha" : "groups");
 
   if(!text){
     toastMsg("No te falta ninguna 😄");
@@ -1115,9 +1129,9 @@ async function copyMissingListToClipboard(){
   }
 
   try{
-    // clipboard API (funciona en https como GitHub Pages)
+    // Clipboard API (funciona en https como GitHub Pages)
     await navigator.clipboard.writeText(text);
-    toastMsg("Faltantes copiados ✅");
+    toastMsg(alpha ? "Faltantes copiados (A-Z) ✅" : "Faltantes copiados (por grupos) ✅");
   }catch(e){
     // fallback
     try{
@@ -1130,7 +1144,7 @@ async function copyMissingListToClipboard(){
       ta.select();
       document.execCommand("copy");
       ta.remove();
-      toastMsg("Faltantes copiados ✅");
+      toastMsg(alpha ? "Faltantes copiados (A-Z) ✅" : "Faltantes copiados (por grupos) ✅");
     }catch(err){
       alert("No pude copiar al portapapeles. Probá desde HTTPS (GitHub Pages) o copiá manualmente.");
     }
