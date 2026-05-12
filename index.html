@@ -460,7 +460,11 @@ header.header-compact{
   font-size:12px;
 }
 
-  
+  /* Permite scroll vertical normal y swipe horizontal dentro del equipo */
+#teamPanel, #teamView, #stickerGrid {
+  touch-action: pan-y;
+}
+    
   </style>
 </head>
 
@@ -821,6 +825,7 @@ teamSearchInput.addEventListener("keydown", (e) => {
 renderHome();
 showHome();
 updateGlobalStats();
+setupTeamSwipe();
 
 /**
  * =========================
@@ -1348,7 +1353,84 @@ async function copyMissingListToClipboard(){
     }
   }
 }
+// ===== NUEVO: Swipe izquierda/derecha dentro de un equipo (circular) =====
 
+// Orden de navegación: por grupos (A->L) y al final FWC (incluido en la rueda).
+function getTeamsOrder(){
+  const arr = [];
+  for (const g of GROUPS) arr.push(...g.teams);
+  arr.push("FWC");
+  return arr;
+}
+
+function openNextPrevTeam(direction /* +1 next, -1 prev */){
+  if(!currentTeam) return; // solo cuando estás dentro de un equipo
+
+  const order = getTeamsOrder();
+  const idx = order.indexOf(currentTeam);
+  if(idx === -1) return;
+
+  // circular
+  const nextIdx = (idx + direction + order.length) % order.length;
+  const nextTeam = order[nextIdx];
+
+  // abre el equipo (usa tu lógica existente)
+  openTeam(nextTeam);
+}
+
+function setupTeamSwipe(){
+  const swipeEl = document.getElementById("teamPanel"); // área donde detectamos el swipe
+  if(!swipeEl) return;
+
+  let startX = 0, startY = 0, startT = 0;
+  let tracking = false;
+
+  const MIN_DIST = 55;        // px
+  const MAX_TIME = 700;       // ms
+  const H_OVER_V = 1.25;      // horizontal debe dominar vertical
+
+  swipeEl.addEventListener("touchstart", (e) => {
+    if(!currentTeam) return; // solo en vista equipo
+    if(e.touches.length !== 1) return;
+
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    startT = Date.now();
+    tracking = true;
+  }, { passive: true });
+
+  swipeEl.addEventListener("touchend", (e) => {
+    if(!tracking) return;
+    tracking = false;
+    if(!currentTeam) return;
+
+    const dt = Date.now() - startT;
+    if(dt > MAX_TIME) return;
+
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+
+    // debe ser horizontal claro
+    if(Math.abs(dx) < MIN_DIST) return;
+    if(Math.abs(dx) < Math.abs(dy) * H_OVER_V) return;
+
+    // Swipe izquierda => siguiente; Swipe derecha => anterior
+    if(dx < 0){
+      openNextPrevTeam(+1);
+    }else{
+      openNextPrevTeam(-1);
+    }
+  }, { passive: true });
+
+  // Bonus: teclado en desktop (opcional)
+  window.addEventListener("keydown", (e) => {
+    if(!currentTeam) return;
+    if(e.key === "ArrowLeft") openNextPrevTeam(-1);
+    if(e.key === "ArrowRight") openNextPrevTeam(+1);
+  });
+}
 </script>
 </body>
 </html>
