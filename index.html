@@ -86,6 +86,10 @@
       border-radius:12px;
       padding:9px 10px;
       cursor:pointer;
+      text-align:center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       transition: transform .05s ease, background .15s ease;
     }
     button:hover{background: rgba(255,255,255,.10)}
@@ -386,7 +390,7 @@
   color: var(--text);
   outline: none;
   font: inherit;
-  font-size: 12px;
+  font-size: 16px;
   letter-spacing: .6px;
   text-transform: uppercase;
 }
@@ -790,16 +794,24 @@ document.getElementById("btnCopyMissing").addEventListener("click", copyMissingL
 
 // NUEVO: buscador por código (Enter para ir)
 const teamSearchInput = document.getElementById("teamSearch");
+
 teamSearchInput.addEventListener("keydown", (e) => {
-  if(e.key !== "Enter") return;
+  if (e.key !== "Enter") return;
+
+  e.preventDefault(); // evita cosas raras del navegador
 
   const code = (teamSearchInput.value || "").trim().toUpperCase();
-
-  // Limpia el input (opcional)
   teamSearchInput.value = "";
+
+  // ✅ esto cierra el teclado (saca el foco del input)
+  teamSearchInput.blur();
+
+  // (opcional) por si iOS dejó la vista corrida
+  window.scrollTo(0, 0);
 
   goToTeamByCode(code);
 });
+
 
 /**
  * =========================
