@@ -122,7 +122,7 @@
     }
     .panel .panel-head h2{margin:0; font-size:14px;}
     .panel .panel-body{
-      padding:12px;
+      padding:8px;
       overflow:auto;
       min-height:0;
     }
@@ -441,19 +441,19 @@ header.header-compact{
 
 /* fila 3: botones 2x2, mismo ancho */
 .actions-row{
-  display:grid;
-  grid-template-columns: 1fr 1fr; /* 2 columnas */
+  display:flex;
   gap:8px;
-}
-.actions-row button{
-  width:100%;
-  padding:8px 10px;
+  align-items:center;
+  flex-wrap:nowrap;      /* <- no baja a otra línea */
 }
 
-/* en pantallas más grandes, se ve más “pro” */
-@media (min-width: 720px){
-  header.header-compact{ gap:10px; padding:12px 14px; }
-  .actions-row{ grid-template-columns: repeat(4, 1fr); }
+.actions-row button{
+  flex: 1 1 0;           /* <- todos mismo ancho */
+  min-width: 0;          /* <- permite achicar */
+  width:auto;
+  padding:8px 8px;       /* <- más compacto */
+  white-space:nowrap;    /* <- no parte texto */
+  font-size:12px;
 }
 
   
@@ -502,19 +502,10 @@ header.header-compact{
     <button class="small danger" id="btnResetAll">Reset todo</button>
   </div>
 </header>
-``
 
   <div class="main">
     <!-- HOME -->
     <section class="panel" id="homePanel">
-      <div class="panel-head">
-        <h2>Equipos por grupo</h2>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-          <span class="pill">Tip: tocá un equipo para editar sus figuritas</span>
-          <button class="small" id="btnOpenAll">Abrir grupos</button>
-          <button class="small" id="btnCloseAll">Cerrar grupos</button>
-        </div>
-      </div>
       <div class="panel-body" id="groupsContainer"></div>
     </section>
 
@@ -767,8 +758,6 @@ const toast = document.getElementById("toast");
 document.getElementById("btnBack").addEventListener("click", () => showHome());
 document.getElementById("btnResetAll").addEventListener("click", resetAll);
 document.getElementById("btnResetTeam").addEventListener("click", resetTeam);
-document.getElementById("btnOpenAll").addEventListener("click", () => setAllDetails(true));
-document.getElementById("btnCloseAll").addEventListener("click", () => setAllDetails(false));
 document.getElementById("btnExport").addEventListener("click", exportData);
 document.getElementById("btnImport").addEventListener("click", importData);
 
